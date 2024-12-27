@@ -21,4 +21,4 @@ which make [Lethal Tracker](https://github.com/Artemis6425/LethalTracker) better
 ## Known issues
 
 - The above mentioned bug in the save/load system causes the program to only save the data from quotas that have been scrolled away from. Therefore, until v1.1 is ready, the workaround is simply to scroll through all the quotas before saving.
-- If [Artemis64](https://github.com/Artemis6425) thought the code for LethalTracker was "fairly messy", they've never seen anything quite like the code I conconct out of laziness. I may make the code cleaner, but if it ain't broke, don't fix it.
+- If [Artemis64](https://github.com/Artemis6425) thought the code for LethalTracker was "fairly messy", she's never seen anything quite like the code I conconct out of laziness. I may make the code cleaner, but if it ain't broke, don't fix it.
