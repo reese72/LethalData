@@ -26,7 +26,7 @@ class LethalData(QMainWindow):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.0")
+        self.setWindowTitle("LethalData v1.1")
         self.setGeometry(100, 100, 650, 500)
         self.setFixedSize(720, 500)  # Set fixed window size (width, height)
 
@@ -224,6 +224,10 @@ class LethalData(QMainWindow):
         self.avg_scrap_label.setFont(QFont(font_family, 14))
         self.avg_scrap_label.setStyleSheet("color: rgb(253, 85, 0);")
 
+        self.avg_label = QLabel("Overall Average: 0")
+        self.avg_label.setFont(QFont(font_family, 14))
+        self.avg_label.setStyleSheet("color: rgb(253, 85, 0);")
+
         # Total Ship Scrap for all quotas
         self.total_all_quota_scrap_label = QLabel("Total Ship Scrap for All Quotas: 0")
         self.total_all_quota_scrap_label.setFont(QFont(font_family, 14))
@@ -265,8 +269,19 @@ class LethalData(QMainWindow):
         self.navigate_right = QPushButton("Navigate >")
 
         for button in [self.navigate_left, self.navigate_right]:
-            button.setStyleSheet(
-                "color: rgb(253, 85, 0); background-color: #111111; border: 1px solid rgb(253, 85, 0);")
+            button.setStyleSheet("""
+            QPushButton {
+                color: rgb(253, 85, 0);
+                background-color: #111111;
+                border: 1px solid rgb(253, 85, 0);
+            }
+            QPushButton:hover {
+                background-color: #2a2a2a;
+            }
+            QPushButton:pressed {
+                background-color: #333233;
+            }
+        """)
             button.setFont(QFont(font_family, 15))
             button.setFixedWidth(120)
 
@@ -286,8 +301,19 @@ class LethalData(QMainWindow):
         self.save_button = QPushButton("Save")
         self.save_button.setFont(QFont(font_family, 15))
         self.save_button.setFixedWidth(60)
-        self.save_button.setStyleSheet(
-            "color: rgb(253, 85, 0); background-color: #111111; border: 1px solid rgb(253, 85, 0);")
+        self.save_button.setStyleSheet("""
+            QPushButton {
+                color: rgb(253, 85, 0);
+                background-color: #111111;
+                border: 1px solid rgb(253, 85, 0);
+            }
+            QPushButton:hover {
+                background-color: #2a2a2a;
+            }
+            QPushButton:pressed {
+                background-color: #333233;
+            }
+        """)
         button_layout.addWidget(self.save_button)
         self.save_button.clicked.connect(self.save_file)
 
@@ -295,8 +321,19 @@ class LethalData(QMainWindow):
         self.load_button = QPushButton("Load")
         self.load_button.setFont(QFont(font_family, 15))
         self.load_button.setFixedWidth(60)
-        self.load_button.setStyleSheet(
-            "color: rgb(253, 85, 0); background-color: #111111; border: 1px solid rgb(253, 85, 0);")
+        self.load_button.setStyleSheet("""
+            QPushButton {
+                color: rgb(253, 85, 0);
+                background-color: #111111;
+                border: 1px solid rgb(253, 85, 0);
+            }
+            QPushButton:hover {
+                background-color: #2a2a2a;
+            }
+            QPushButton:pressed {
+                background-color: #333233;
+            }
+        """)
         button_layout.addWidget(self.load_button)
         self.load_button.clicked.connect(self.load_quota_data_from_file)
 
@@ -313,6 +350,7 @@ class LethalData(QMainWindow):
         self.layout.addLayout(self.grid)
         self.layout.addWidget(self.total_scrap_label)  # Add total scrap label
         self.layout.addWidget(self.avg_scrap_label)
+        self.layout.addWidget(self.avg_label)
         self.layout.addWidget(self.total_all_quota_scrap_label)  # Add total scrap for all quotas label
         self.layout.addLayout(self.nav_buttons)
         tab.setLayout(self.layout)
@@ -369,6 +407,7 @@ class LethalData(QMainWindow):
         self.quota_data[str(self.quota_number)] = current_data
 
     def save_file(self):
+        self.save_quota_data()
 
         # Open a save file dialog
         options = QFileDialog.Options()
@@ -465,11 +504,11 @@ class LethalData(QMainWindow):
             }
 
             QTabBar::tab:selected {
-                background-color: #333233;
+                background-color: #2a2a2a;
             }
 
             QTabBar::tab:hover {
-                background-color: #333233;
+                background-color: #2a2a2a;
             }
         """)
 
@@ -477,6 +516,7 @@ class LethalData(QMainWindow):
         self.sum_quota()
         self.sum_all_quotas()
         self.avg_quota()
+        self.all_quota_average()
         self.calc_roll()
 
 
@@ -526,18 +566,38 @@ class LethalData(QMainWindow):
     def avg_quota(self):
         total_day = 0
         total_sold_scrap = 0
-        counter = 0
         for day_label, field in self.quota_inputs.items():
             try:
-                value = float(field.text())
+                value = int(field.text())
                 if day_label != "Sell" and "_" not in day_label:
-                    counter += 1
                     total_day += value
             except ValueError:
                 pass
-        if counter == 0:
-            counter = 1
-        self.avg_scrap_label.setText(f"Quota Average: {(total_day / counter):.0f}")
+        self.avg_scrap_label.setText(f"Quota Average: {(total_day / 3):.0f}")
+
+    def all_quota_average(self):
+        current_data = {str(key): field.text() for key, field in self.quota_inputs.items()}
+        current_data.update({str(key): checkbox.isChecked() for key, checkbox in self.quota_checkboxes.items()})
+        all_data = {**self.quota_data, str(self.quota_number): current_data}
+
+        total_day = 0
+        i = "1"
+        for i in self.quota_data:
+            i = str(int(i) + 1)
+        if int(i) > 1:
+            i = str(int(i) - 1)
+        for quota in all_data.values():
+            for key, value in quota.items():
+                if "Player" in key or "_" in key:
+                    continue  # Skip checkboxes in calculations
+                if value != "":
+                    try:
+                        value = int(value)
+                        if key != "Profit Quota" and key != "Sell":
+                            total_day += value
+                    except ValueError:
+                        pass
+        self.avg_label.setText(f"Overall Average: {total_day/(3 * (int(i))):.0f}")
 
     def sum_all_quotas(self):
         current_data = {str(key): field.text() for key, field in self.quota_inputs.items()}
@@ -599,23 +659,7 @@ class LethalData(QMainWindow):
             self.calculate_quota()  # Ensure profit quota is calculated
             self.sum_quota()
             self.sum_all_quotas()
-
-    def day_navigate_left_action(self):
-        self.save_quota_data()
-        if self.day_number > 1:
-            self.day_number -= 1
-            self.load_quota_data()
-            self.update_quota_title()
-            self.calculate_quota()  # Ensure profit quota is calculated
-            self.sum_quota()
-            self.sum_all_quotas()
-        elif self.quota_number > 1:
-            self.quota_number -= 1
-            self.load_quota_data()
-            self.update_quota_title()
-            self.calculate_quota()  # Ensure profit quota is calculated
-            self.sum_quota()
-            self.sum_all_quotas()
+            self.all_quota_average()
 
     def navigate_right_action(self):
         self.save_quota_data()
@@ -632,21 +676,7 @@ class LethalData(QMainWindow):
         self.calculate_quota()  # Ensure profit quota is calculated
         self.sum_quota()
         self.sum_all_quotas()
-    def day_navigate_right_action(self):
-        self.save_quota_data()
-        self.day_number += 1
-        # Pre-fill names for a new quota
-        if str(self.quota_number) not in self.quota_data:
-            self.quota_data[str(self.quota_number)] = {}
-            previous_quota = str(self.quota_number - 1)
-            if previous_quota in self.quota_data:
-                self.quota_data[str(self.quota_number)]['Player Names'] = self.quota_data[previous_quota].get(
-                    'Player Names', [])
-        self.load_quota_data()
-        self.update_quota_title()
-        self.calculate_quota()  # Ensure profit quota is calculated
-        self.sum_quota()
-        self.sum_all_quotas()
+        self.all_quota_average()
 
 
 if __name__ == "__main__":
