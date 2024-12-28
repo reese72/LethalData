@@ -11,7 +11,7 @@ which make [Lethal Tracker](https://github.com/Artemis6425/LethalTracker) better
 ## Features
 
 - All-inclusive multi-quota tracker for keeping tabs on loot, player deaths, sells, quota rolls, and more
-- Built-in sell calculator that accounts for overtime (Finding the terminal value for a given amount of scrap coming soon)
+- Built-in sell calculator that accounts for overtime
 - Specifiable player names and notes for detailed logging
 - Top and Bottom line loot for each day
 - Automatic quota roll calculation 
