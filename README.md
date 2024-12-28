@@ -1,4 +1,4 @@
-# LethalData v1.0 by Reese72
+# LethalData by Reese72
 
 First and foremost I want to give plenty of credit and many thanks to [Artemis64](https://github.com/Artemis6425) for developing LethalTracker, which I shamelessly used as a source of heavy inspiration for LethalData's UI.
 
@@ -15,12 +15,12 @@ which make [Lethal Tracker](https://github.com/Artemis6425/LethalTracker) better
 - Specifiable player names and notes for detailed logging
 - Top and Bottom line loot for each day
 - Automatic quota roll calculation 
-- Save and Load to file (slightly bugged as of v1.0, but useable)
-- Per-Quota average and profit (may have forgotten overall and Q2+ average in v1.0, so get hyped for v1.1)
+- Save and Load to file
+- Per-Quota average and profit
+- Overall average and ship loot
 - Plenty of other feature and UI improvement in the works
 
 
 ## Known issues
 
-- The above mentioned bug in the save/load system causes the program to only save the data from quotas that have been scrolled away from. Therefore, until v1.1 is ready, the workaround is simply to scroll through all the quotas before saving.
-- The code for v1.0 is a borderline disaster. I may try to clean it up, but if it ain't broke, don't fix it.
+- The code for v1.1 is pretty bad. I may try to clean it up, but if it ain't broke, don't fix it.
