@@ -18,7 +18,7 @@ which make [Lethal Tracker](https://github.com/Artemis6425/LethalTracker) better
 - Save and Load to file
 - Per-Quota average and profit
 - Overall average and ship loot
-- Plenty of other feature and UI improvement in the works
+- Plenty of other feature and UI improvements in the works
 
 
 ## Known issues
