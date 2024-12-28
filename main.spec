@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('C:\\Users\\chick\\PycharmProjects\\PythonProject\\custom_icon.ico', '.'), ('C:\\Users\\chick\\PycharmProjects\\PythonProject\\3270-Regular.otf', '.')],
+    datas=[('C:\\Users\\chick\\PycharmProjects\\PythonProject\\icon.ico', '.'), ('C:\\Users\\chick\\PycharmProjects\\PythonProject\\3270-Regular.otf', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\chick\\PycharmProjects\\PythonProject\\custom_icon.ico'],
+    icon=['C:\\Users\\chick\\PycharmProjects\\PythonProject\\icon.ico'],
 )
