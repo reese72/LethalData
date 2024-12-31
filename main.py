@@ -28,7 +28,7 @@ class LethalData(QMainWindow):
         # Set up the main window
         self.setWindowTitle("LethalData v1.1")
         self.setGeometry(100, 100, 650, 500)
-        self.setFixedSize(720, 500)  # Set fixed window size (width, height)
+        self.setFixedSize(720, 550)  # Set fixed window size (width, height)
 
         # State tracking
         self.quota_number = 1  # Current quota number
@@ -210,7 +210,22 @@ class LethalData(QMainWindow):
                 # Add player death checkboxes for this day
                 for j in range(4):  # Assuming 4 players
                     checkbox = QCheckBox(f"Player {j + 1} Death")
-                    checkbox.setStyleSheet("color: rgb(253, 85, 0);")
+                    checkbox.setStyleSheet("""
+                        QCheckBox {
+                            color: rgb(253, 85, 0);
+                            padding: 2px;
+                            border: 2px solid transparent;
+                            background-color: transparent;
+                        }
+                        QCheckBox::indicator {
+                            width: 0px; /* Remove the actual checkbox indicator */
+                            height: 0px;
+                        }
+                        QCheckBox:checked {
+                            border: 2px solid rgb(253, 85, 0);
+                            background-color: rgba(53, 25, 0, 0.2);
+                        }
+                    """)
                     checkbox.stateChanged.connect(self.update_sums)
                     self.quota_checkboxes[f"{day_label}_Player{j + 1}"] = checkbox
                     self.grid.addWidget(checkbox, i, j + 4)
@@ -565,39 +580,51 @@ class LethalData(QMainWindow):
 
     def avg_quota(self):
         total_day = 0
-        total_sold_scrap = 0
+        count = 0
         for day_label, field in self.quota_inputs.items():
             try:
-                value = int(field.text())
-                if day_label != "Sell" and "_" not in day_label:
-                    total_day += value
+                value = field.text()
+                if value and day_label != "Sell" and "_" not in day_label:
+                    total_day += int(value)
+                    count += 1
             except ValueError:
                 pass
-        self.avg_scrap_label.setText(f"Quota Average: {(total_day / 3):.0f}")
+        average = (total_day / count) if count > 0 else 0
+        self.avg_scrap_label.setText(f"Quota Average: {average:.0f}")
 
     def all_quota_average(self):
+        # Combine data from inputs and checkboxes
         current_data = {str(key): field.text() for key, field in self.quota_inputs.items()}
         current_data.update({str(key): checkbox.isChecked() for key, checkbox in self.quota_checkboxes.items()})
         all_data = {**self.quota_data, str(self.quota_number): current_data}
 
         total_day = 0
+        count = 0
         i = "1"
+
+        # Calculate the current maximum quota index
         for i in self.quota_data:
             i = str(int(i) + 1)
         if int(i) > 1:
             i = str(int(i) - 1)
+
+        # Iterate through all quota data and calculate totals
         for quota in all_data.values():
             for key, value in quota.items():
                 if "Player" in key or "_" in key:
-                    continue  # Skip checkboxes in calculations
-                if value != "":
+                    continue  # Skip checkboxes and invalid fields
+                if value:
                     try:
                         value = int(value)
                         if key != "Profit Quota" and key != "Sell":
                             total_day += value
+                            count += 1
                     except ValueError:
                         pass
-        self.avg_label.setText(f"Overall Average: {total_day/(3 * (int(i))):.0f}")
+
+        # Calculate the average, avoiding division by zero
+        average = (total_day / count) if count > 0 else 0
+        self.avg_label.setText(f"Overall Average: {average:.0f}")
 
     def sum_all_quotas(self):
         current_data = {str(key): field.text() for key, field in self.quota_inputs.items()}
