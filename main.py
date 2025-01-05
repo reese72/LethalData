@@ -26,9 +26,9 @@ class LethalData(QMainWindow):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.1")
+        self.setWindowTitle("LethalData v1.1.2")
         self.setGeometry(100, 100, 650, 500)
-        self.setFixedSize(720, 550)  # Set fixed window size (width, height)
+        self.setFixedSize(750, 600)  # Set fixed window size (width, height)
 
         # State tracking
         self.quota_number = 1  # Current quota number
@@ -74,16 +74,17 @@ class LethalData(QMainWindow):
 
         calc_labels = ["Initial Terminal:", "Quota:", "Desired Terminal:", "Scrap to Sell:"]
         self.grid.setAlignment(Qt.AlignTop | Qt.AlignLeft)  # Align grid to the top-left
-        self.grid.setHorizontalSpacing(10)  # Add some spacing between columns
+        self.grid.setHorizontalSpacing(20)  # Add some spacing between columns
         self.grid.setVerticalSpacing(15)  # Add spacing between rows
 
         # Loop through day labels
-        for i, day_label in enumerate(calc_labels, start=1):
+        for i, calc_label in enumerate(calc_labels, start=1):
             # Create a label
-            label = QLabel(day_label)
+            label = QLabel(calc_label)
             label.setFont(QFont(font_family, 17))
             label.setStyleSheet("color: rgb(253, 85, 0);")
-            label.setFixedWidth(250)  # Set a fixed width to stop labels from expanding
+            label.setFixedWidth(260)  # Set a fixed width to stop labels from expanding
+            label.setContentsMargins(0, 0, 10, 3)  # Add some margin at the bottom
             label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # Align label to the right
 
             # Create an input field
@@ -104,7 +105,7 @@ class LethalData(QMainWindow):
             self.grid.addLayout(row_layout, i, 0)  # Add row to grid layout
 
             # Store the input field reference
-            self.calc_inputs[day_label] = input_field
+            self.calc_inputs[calc_label] = input_field
 
         # Total Ship Scrap Display
         self.overtime_label = QLabel("Overtime: No Overtime")
@@ -162,11 +163,12 @@ class LethalData(QMainWindow):
             label = QLabel(day_label)
             label.setFont(QFont(font_family, 12))
             label.setStyleSheet("color: rgb(253, 85, 0);")
-            label.setFixedWidth(45)
+            label.setContentsMargins(0, 0, 0, 6)
+            label.setFixedWidth(55)
             input_field = QLineEdit()
             input_field.setFont(QFont(font_family, 12))
             input_field.setPlaceholderText("####")
-            input_field.setFixedWidth(55)  # Adjust size of text boxes
+            input_field.setFixedWidth(65)  # Adjust size of text boxes
             input_field.setContentsMargins(10, 0, 0, 0)
             input_field.textChanged.connect(self.update_sums)
             input_field.setStyleSheet(
@@ -178,8 +180,8 @@ class LethalData(QMainWindow):
                 bottom_line = QLineEdit()
                 bottom_line.setFont(QFont(font_family, 12))
                 bottom_line.setPlaceholderText("####")
-                bottom_line.setFixedWidth(65)  # Adjust size of text boxes
-                bottom_line.setContentsMargins(0, 0, 20, 0)
+                bottom_line.setFixedWidth(55)  # Adjust size of text boxes
+                bottom_line.setContentsMargins(0, 0, 0, 0)
                 bottom_line.textChanged.connect(self.update_sums)
                 bottom_line.setStyleSheet(
                     "color: rgb(253, 85, 0); background-color: #000000; border: 1px solid rgb(253, 85, 0);")
@@ -187,7 +189,7 @@ class LethalData(QMainWindow):
                 self.grid.addWidget(bottom_line, i, 3)
             else:
                 input_field.setContentsMargins(0, 0, 0, 0)
-                input_field.setFixedWidth(55)
+                input_field.setFixedWidth(65)
                 input_field.setPlaceholderText("#####")
             self.grid.addWidget(label, i, 0)
             self.grid.addWidget(input_field, i, 1)
@@ -197,7 +199,7 @@ class LethalData(QMainWindow):
             # Add Notes column
             notes_input = QLineEdit()
             notes_input.setFont(QFont(font_family, 12))
-            notes_input.setFixedWidth(100)  # Set width for the Notes column
+            notes_input.setFixedWidth(120)  # Set width for the Notes column
             notes_input.setPlaceholderText("Add Notes")
             notes_input.setAlignment(Qt.AlignLeft)
             notes_input.setStyleSheet(
@@ -213,13 +215,16 @@ class LethalData(QMainWindow):
                     checkbox.setStyleSheet("""
                         QCheckBox {
                             color: rgb(253, 85, 0);
-                            padding: 2px;
+                            padding: 3px;
                             border: 2px solid transparent;
                             background-color: transparent;
                         }
                         QCheckBox::indicator {
                             width: 0px; /* Remove the actual checkbox indicator */
                             height: 0px;
+                        }
+                        QCheckBox:hover {
+                            border: 2px solid rgb(253, 85, 0, 0.2);
                         }
                         QCheckBox:checked {
                             border: 2px solid rgb(253, 85, 0);
@@ -256,7 +261,7 @@ class LethalData(QMainWindow):
         self.profit_quota_input = QLineEdit()
         self.profit_quota_input.setFont(QFont(font_family, 12))
         self.profit_quota_input.setPlaceholderText("130")
-        self.profit_quota_input.setFixedWidth(55)
+        self.profit_quota_input.setFixedWidth(65)
         self.profit_quota_input.setText(f"{130:.0f}")
         self.profit_quota_input.setStyleSheet(
             "color: rgb(253, 85, 0); background-color: #000000; border: 1px solid rgb(253, 85, 0);")
@@ -298,7 +303,7 @@ class LethalData(QMainWindow):
             }
         """)
             button.setFont(QFont(font_family, 15))
-            button.setFixedWidth(120)
+            button.setFixedWidth(150)
 
         self.nav_buttons.addWidget(self.navigate_left)
         self.nav_buttons.addWidget(self.navigate_right)
@@ -315,7 +320,7 @@ class LethalData(QMainWindow):
         # Save Button
         self.save_button = QPushButton("Save")
         self.save_button.setFont(QFont(font_family, 15))
-        self.save_button.setFixedWidth(60)
+        self.save_button.setFixedWidth(70)
         self.save_button.setStyleSheet("""
             QPushButton {
                 color: rgb(253, 85, 0);
@@ -335,7 +340,7 @@ class LethalData(QMainWindow):
         # Load Button
         self.load_button = QPushButton("Load")
         self.load_button.setFont(QFont(font_family, 15))
-        self.load_button.setFixedWidth(60)
+        self.load_button.setFixedWidth(70)
         self.load_button.setStyleSheet("""
             QPushButton {
                 color: rgb(253, 85, 0);
