@@ -23,3 +23,4 @@ That said, LethalData isn't a complete clone of [Lethal Tracker](https://github.
 ## Known issues
 
 - The code for v1.1 is pretty bad. I may try to clean it up, but if it ain't broke, don't fix it.
+- Element spacing and size may be inconsistent with monitor size and scaling, 1.1.2 includes some changes to mitigate (but not fix) this
