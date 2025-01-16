@@ -26,9 +26,9 @@ class LethalData(QMainWindow):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.1.2")
+        self.setWindowTitle("LethalData v1.1.3")
         self.setGeometry(100, 100, 650, 500)
-        self.setFixedSize(750, 600)  # Set fixed window size (width, height)
+        self.setFixedSize(800, 600)  # Set fixed window size (width, height)
 
         # State tracking
         self.quota_number = 1  # Current quota number
@@ -85,12 +85,12 @@ class LethalData(QMainWindow):
             label.setStyleSheet("color: rgb(253, 85, 0);")
             label.setFixedWidth(260)  # Set a fixed width to stop labels from expanding
             label.setContentsMargins(0, 0, 10, 3)  # Add some margin at the bottom
-            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # Align label to the right
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
             # Create an input field
             input_field = QLineEdit()
             input_field.setFont(QFont(font_family, 12))
-            input_field.setPlaceholderText("####")
+            input_field.setPlaceholderText("########")
             input_field.setFixedWidth(80)
             input_field.setStyleSheet("color: rgb(253, 85, 0); background-color: #000000; border: 1px solid rgb(253, 85, 0);")
             input_field.textChanged.connect(self.calculate_scrap)
@@ -148,7 +148,7 @@ class LethalData(QMainWindow):
         for j in range(4):  # Assuming 4 players
             name_input = QLineEdit()
             name_input.setFont(QFont(font_family, 12))
-            name_input.setFixedWidth(90)
+            name_input.setFixedWidth(105)
             name_input.setPlaceholderText(f"Player {j + 1} Name")
             name_input.setStyleSheet(
                 "color: rgb(253, 85, 0); background-color: #000000; border: 1px solid rgb(253, 85, 0);")
@@ -167,7 +167,7 @@ class LethalData(QMainWindow):
             label.setFixedWidth(55)
             input_field = QLineEdit()
             input_field.setFont(QFont(font_family, 12))
-            input_field.setPlaceholderText("####")
+            input_field.setPlaceholderText("#####")
             input_field.setFixedWidth(65)  # Adjust size of text boxes
             input_field.setContentsMargins(10, 0, 0, 0)
             input_field.textChanged.connect(self.update_sums)
@@ -179,7 +179,7 @@ class LethalData(QMainWindow):
                 slash.setContentsMargins(0, 0, 0, 0)
                 bottom_line = QLineEdit()
                 bottom_line.setFont(QFont(font_family, 12))
-                bottom_line.setPlaceholderText("####")
+                bottom_line.setPlaceholderText("#####")
                 bottom_line.setFixedWidth(55)  # Adjust size of text boxes
                 bottom_line.setContentsMargins(0, 0, 0, 0)
                 bottom_line.textChanged.connect(self.update_sums)
@@ -190,7 +190,7 @@ class LethalData(QMainWindow):
             else:
                 input_field.setContentsMargins(0, 0, 0, 0)
                 input_field.setFixedWidth(65)
-                input_field.setPlaceholderText("#####")
+                input_field.setPlaceholderText("######")
             self.grid.addWidget(label, i, 0)
             self.grid.addWidget(input_field, i, 1)
             self.quota_inputs[day_label] = input_field
@@ -199,7 +199,7 @@ class LethalData(QMainWindow):
             # Add Notes column
             notes_input = QLineEdit()
             notes_input.setFont(QFont(font_family, 12))
-            notes_input.setFixedWidth(120)  # Set width for the Notes column
+            notes_input.setFixedWidth(140)  # Set width for the Notes column
             notes_input.setPlaceholderText("Add Notes")
             notes_input.setAlignment(Qt.AlignLeft)
             notes_input.setStyleSheet(
