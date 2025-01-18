@@ -69,7 +69,7 @@ class LethalData(QMainWindow):
         self.calc_label.setStyleSheet("color: rgb(253, 85, 0);")
 
         # Create grid layout for the table
-        self.calc_inputs = {}
+        self.calc_inputs = {} #chase
         self.grid = QGridLayout()
 
         calc_labels = ["Initial Terminal:", "Quota:", "Desired Terminal:", "Scrap to Sell:"]
