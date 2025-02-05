@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QFontDatabase
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
+import Sheet
 import os
 
 
@@ -26,7 +27,7 @@ class LethalData(QMainWindow):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.1.3")
+        self.setWindowTitle("LethalData v1.2")
         self.setGeometry(100, 100, 650, 500)
         self.setFixedSize(800, 600)  # Set fixed window size (width, height)
 
@@ -199,7 +200,7 @@ class LethalData(QMainWindow):
             # Add Notes column
             notes_input = QLineEdit()
             notes_input.setFont(QFont(font_family, 12))
-            notes_input.setFixedWidth(140)  # Set width for the Notes column
+            notes_input.setFixedWidth(120)  # Set width for the Notes column
             notes_input.setPlaceholderText("Add Notes")
             notes_input.setAlignment(Qt.AlignLeft)
             notes_input.setStyleSheet(
@@ -448,11 +449,13 @@ class LethalData(QMainWindow):
             if str(self.quota_number) in self.quota_data:
                 data = self.quota_data[str(self.quota_number)]
                 for key, field in self.quota_inputs.items():
+                    if str(key) == "Day 3_BL":
+                        patch_fix = data.get(str(key), "")
                     field.setText(data.get(str(key), ""))
                 for key, checkbox in self.quota_checkboxes.items():
                     checkbox.setChecked(data.get(str(key), False))
                 self.profit_quota_input.setText(data.get('Profit Quota', ""))  # Load Profit Quota
-
+                self.quota_inputs["Day 3_BL"].setText(patch_fix)
                 # Load player names or fallback to previous quota's names
                 player_names = data.get('Player Names', [])
                 for name_input, name in zip(self.name_inputs, player_names):
@@ -478,21 +481,28 @@ class LethalData(QMainWindow):
         # Open a file dialog to select a JSON file
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Quota Data File", "",
-                                                   "LDS Files (*.lds);;All Files (*)", options=options)
-
+                                                   "LDS Files (*.lds);;Maku Sheet (*.csv);;All Files (*)",
+                                                   options=options)
+        processor = Sheet.DataProcessor()
         if file_path:
-            # Load the JSON data from the file
-            try:
-                with open(file_path, 'r') as file:
-                    data = json.load(file)
+            # If the file ending is lds
+            if file_path.endswith(".lds"):
+                try:
+                    with open(file_path, 'r') as file:
+                        data = json.load(file)
 
-                self.quota_data = data  # Assuming the file contains data for multiple quotas
+                    self.quota_data = data
+                    self.load_quota_data()
 
-                self.quota_data = data
-                self.load_quota_data()
-
-            except Exception as e:
-                pass
+                except Exception as e:
+                    pass
+            elif file_path.endswith(".csv"):
+                try:
+                    processed_data = processor.process_all_data(file_path)
+                    self.quota_data = processed_data  # Use json.loads for string data
+                    self.load_quota_data()
+                except Exception as e:
+                    pass
 
     def update_column_labels(self):
         """Update the checkbox labels based on the name inputs."""
