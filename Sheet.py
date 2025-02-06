@@ -120,7 +120,10 @@ class DataProcessor:
 
         for i in range(len(self.Notes)):
             for j in range(len(self.Notes[i])):
-                self.Notes[i][j] += ", " + self.Items[i][j] + " itms, " + self.Bees[i][j] + " bees"
+                try:
+                    self.Notes[i][j] += ", " + self.Items[i][j] + " itms, " + self.Bees[i][j] + " bees"
+                except IndexError:
+                    pass
         return self.get_json()
 
     def get_json(self):
