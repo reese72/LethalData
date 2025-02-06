@@ -2,7 +2,7 @@
 
 First and foremost I want to give plenty of credit and many thanks to [Artemis64](https://github.com/Artemis6425) for developing LethalTracker, which I shamelessly used as a source of heavy inspiration for LethalData's UI.
 
-![screenshot of LethalData](https://i.imgur.com/HWx0GLW.png)
+![screenshot of LethalData](https://i.imgur.com/UueR4te.png)
 
 The main goal of this program is to take everything about [Lethal Tracker](https://github.com/Artemis6425/LethalTracker) that was fantastic and make it better, while adding features where they were lacking.
 That said, LethalData isn't a complete clone of [Lethal Tracker](https://github.com/Artemis6425/LethalTracker). For one, LethalData has no OBS mode, nor does it have any of the quota pace calculations, so if either of those are deal breakers it would be best to stick with the OG.
@@ -15,12 +15,12 @@ That said, LethalData isn't a complete clone of [Lethal Tracker](https://github.
 - Top and Bottom line loot for each day
 - Automatic quota roll calculation 
 - Save and Load to file
+- Import from MakuSheet
 - Per-Quota average and profit
 - Overall average and ship loot
 - Plenty of other feature and UI improvements in the works
 
 
 ## Known issues
-
-- The code for v1.1 is pretty bad. I may try to clean it up, but if it ain't broke don't fix it.
-- Element spacing and size may be inconsistent with monitor size and scaling, 1.1.2 includes some changes to mitigate (but not fix) this
+- Spreadsheet importing is currently hardcoded for MakuSheet only, importing other sheets won't work well if at all.
+- Element spacing and size may be inconsistent with monitor resolution and scaling.
