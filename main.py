@@ -4,11 +4,13 @@ from platform import system
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, QLabel,
-    QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QCheckBox, QFileDialog
+    QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QCheckBox, QFileDialog, QMessageBox
 )
 from PyQt5.QtGui import QFont, QFontDatabase
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
+from PyQt5.uic.properties import QtGui
+
 import Sheet
 import os
 
@@ -27,7 +29,7 @@ class LethalData(QMainWindow):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.2")
+        self.setWindowTitle("LethalData v1.2.2")
         self.setGeometry(100, 100, 650, 500)
         self.setFixedSize(800, 600)  # Set fixed window size (width, height)
 
@@ -401,14 +403,29 @@ class LethalData(QMainWindow):
         self.avg_quota()
 
         return tab
+
     def clear_data(self):
-        for field in self.quota_inputs.values():
-            field.clear()
-        for checkbox in self.quota_checkboxes.values():
-            checkbox.setChecked(False)
-        self.profit_quota_input.clear()
-        for name_input in self.name_inputs:
-            name_input.clear()
+        qm = QMessageBox()
+        ret = qm.question(self, 'Confirmation', "Are you sure you want to reset all values?", qm.Yes | qm.No)
+
+        if ret == qm.Yes:
+            for quota in self.quota_data:
+                self.quota_data[quota] = {}
+            for field in self.quota_inputs.values():
+                field.clear()
+            for checkbox in self.quota_checkboxes.values():
+                checkbox.setChecked(False)
+            self.profit_quota_input.clear()
+            self.total_scrap_label.setText("Quota Profit: 0")
+            self.avg_scrap_label.setText("Quota Average: 0")
+            self.total_all_quota_scrap_label.setText("Total Ship Scrap for All Quotas: 0")
+            self.avg_label.setText("Overall Average: 0")
+            self.roll_label.setText("Roll: 0.50")
+            self.name_inputs[0].setText("")
+            self.name_inputs[1].setText("")
+            self.name_inputs[2].setText("")
+            self.name_inputs[3].setText("")
+
     def calculate_scrap(self):
         # Create the dictionary
         quota = {str(key): field.text() for key, field in self.calc_inputs.items()}
@@ -536,7 +553,6 @@ class LethalData(QMainWindow):
                     self.quota_data = processed_data  # Use json.loads for string data
                     self.load_quota_data()
                 except Exception as e:
-                    print(e)
                     pass
 
     def update_column_labels(self):
