@@ -125,7 +125,6 @@ class DataProcessor:
             if self.is_number(data):
                 self.Quotas.append(data)
 
-        print(self.Quotas)
 
         self.Moon = self.process_data(self.data_2d_array, self.MoonIdx, ['', 'MOON'])
         self.Weather = self.process_data(self.data_2d_array, self.WeatherIdx, ['', 'WEATHER', 'CONDITION'])
@@ -136,14 +135,6 @@ class DataProcessor:
         self.BL = self.process_numbers(self.data_2d_array, self.BLIdx)
         self.Sold = self.process_per_quota(self.data_2d_array, self.SoldIdx, [''])
 
-        print(self.Moon)
-        print(self.Weather)
-        print(self.Layout)
-        print(self.Items)
-        print(self.Bees)
-        print(self.Collected)
-        print(self.BL)
-        print(self.Sold)
 
         try:
             for i in range(4):
@@ -157,7 +148,6 @@ class DataProcessor:
             for j in range(4):
                 i = 0
                 k = 0
-                print(self.data_2d_array[self.PlayersIdx + j])
                 for death in self.data_2d_array[self.PlayersIdx + j]:
                     if death in ['', 'M', 'S', 'X', ' TRUE ', ' FALSE ', ' X ', ' ']:
                         if i > (self.playoffset - 1):
@@ -176,7 +166,6 @@ class DataProcessor:
             Note = ""
             try:
                 data = self.data_2d_array[self.NoteIdx][i]
-                print(data)
                 if (data not in ['Notes', 'NOTES', 'notes']) and data != "":
                     Note += data + ", "
             except IndexError:
@@ -212,8 +201,6 @@ class DataProcessor:
         self.data_dict = {}
 
         for quota_index, quota in enumerate(self.Quotas):
-            print(quota_index)
-            print(quota)
             self.data_dict[str(quota_index + 1)] = {
                 "Day 1": self.Collected[quota_index][0] if len(self.Collected[quota_index]) > 0 else "",
                 "Day 1_BL": (self.BL[quota_index][0] if len(self.BL[quota_index]) > 0 else "") if len(self.BL) > quota_index else "",
@@ -242,6 +229,4 @@ class DataProcessor:
                 "Profit Quota": quota,
                 "Player Names": self.players
             }
-        print(self.data_dict)
-
         return self.data_dict
