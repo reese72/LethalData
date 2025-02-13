@@ -15,12 +15,11 @@ That said, LethalData isn't a complete clone of [Lethal Tracker](https://github.
 - Top and Bottom line loot for each day
 - Automatic quota roll calculation 
 - Save and Load to file
-- Import from MakuSheet
+- Import from Maku, Doppenheimer, and Bread Sheets
 - Per-Quota average and profit
 - Overall average and ship loot
 - Plenty of other feature and UI improvements in the works
 
 
 ## Known issues
-- Spreadsheet importing is currently hardcoded for MakuSheet only, importing other sheets won't work well if at all.
 - Element spacing and size may be inconsistent with monitor resolution and scaling.
