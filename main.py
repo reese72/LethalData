@@ -358,6 +358,25 @@ class LethalData(QMainWindow):
         button_layout.addWidget(self.load_button)
         self.load_button.clicked.connect(self.load_quota_data_from_file)
 
+        self.ClearButton = QPushButton("Clear")
+        self.ClearButton.setFont(QFont(font_family, 15))
+        self.ClearButton.setFixedWidth(70)
+        self.ClearButton.setStyleSheet("""
+            QPushButton {
+                color: rgb(253, 85, 0);
+                background-color: #111111;
+                border: 1px solid rgb(253, 85, 0);
+            }
+            QPushButton:hover {
+                background-color: #2a2a2a;
+            }
+            QPushButton:pressed {
+                background-color: #333233;
+            }
+        """)
+        button_layout.addWidget(self.ClearButton)
+        self.ClearButton.clicked.connect(self.clear_data)
+
         # Align buttons to the left
         button_layout.addStretch()  # Push everything to the left
 
@@ -382,7 +401,14 @@ class LethalData(QMainWindow):
         self.avg_quota()
 
         return tab
-
+    def clear_data(self):
+        for field in self.quota_inputs.values():
+            field.clear()
+        for checkbox in self.quota_checkboxes.values():
+            checkbox.setChecked(False)
+        self.profit_quota_input.clear()
+        for name_input in self.name_inputs:
+            name_input.clear()
     def calculate_scrap(self):
         # Create the dictionary
         quota = {str(key): field.text() for key, field in self.calc_inputs.items()}
@@ -481,7 +507,7 @@ class LethalData(QMainWindow):
         # Open a file dialog to select a JSON file
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Quota Data File", "",
-                                                   "LDS Files (*.lds);;Maku Sheet (*.csv);;All Files (*)",
+                                                   "LDS Files (*.lds);;Spreadsheet (*.csv);;All Files (*)",
                                                    options=options)
         processor = Sheet.DataProcessor()
         if file_path:
@@ -497,11 +523,20 @@ class LethalData(QMainWindow):
                 except Exception as e:
                     pass
             elif file_path.endswith(".csv"):
+                if "maku" in file_path.lower():
+                    format = "maku"
+                elif "dop" in file_path.lower():
+                    format = "dop"
+                elif "bread" in file_path.lower():
+                    format = "bread"
+                else:
+                    format = "maku"
                 try:
-                    processed_data = processor.process_all_data(file_path)
+                    processed_data = processor.process_all_data(file_path, format)
                     self.quota_data = processed_data  # Use json.loads for string data
                     self.load_quota_data()
                 except Exception as e:
+                    print(e)
                     pass
 
     def update_column_labels(self):
