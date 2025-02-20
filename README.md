@@ -18,6 +18,7 @@ That said, LethalData isn't a complete clone of [Lethal Tracker](https://github.
 - Import from Maku, Doppenheimer, and Bread Sheets
 - Per-Quota average and profit
 - Overall average and ship loot
+- Stream overlay with adjustable colors
 - Plenty of other feature and UI improvements in the works
 
 
