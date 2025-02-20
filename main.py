@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QFontDatabase
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.uic.properties import QtGui
+from PyQt5.QtWidgets import QColorDialog
+
 
 import Sheet
 import os
@@ -22,14 +23,94 @@ def resource_path(relative_path):
     else:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
-
-
-class LethalData(QMainWindow):
+class StreamOverlayWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.2.2")
+        self.setWindowTitle("Stream Overlay")
+        self.setGeometry(100, 100, 400, 300)
+        self.setFixedSize(600, 300)  # Set fixed window size (width, height)
+
+        # Load the OTF font
+        font_id = QFontDatabase.addApplicationFont(resource_path("3270-Regular.otf"))
+        font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+
+        # Create the main widget for the window
+        self.layout = QVBoxLayout()
+        self.set_dark_theme(self)
+        self.setWindowIcon(QIcon(resource_path('icon.ico')))
+
+        # Title
+        self.current_quota = QLabel(f"Quota 1: 130")
+        self.current_quota.setFont(QFont(font_family, 20))
+        self.current_quota.setAlignment(Qt.AlignLeft)
+        self.current_quota.setStyleSheet("color: rgb(253, 85, 0);")
+        self.current_quota.setContentsMargins(0, 0, 0, 0)
+
+        self.scrap = QLabel(f"Scrap on Ship: 0")
+        self.scrap.setFont(QFont(font_family, 20))
+        self.scrap.setAlignment(Qt.AlignLeft)
+        self.scrap.setStyleSheet("color: rgb(253, 85, 0);")
+
+        self.Q_average = QLabel(f"Quota Average: 0")
+        self.Q_average.setFont(QFont(font_family, 20))
+        self.Q_average.setAlignment(Qt.AlignLeft)
+        self.Q_average.setStyleSheet("color: rgb(253, 85, 0);")
+
+        self.overall_average = QLabel(f"Overall Average: 0")
+        self.overall_average.setFont(QFont(font_family, 20))
+        self.overall_average.setAlignment(Qt.AlignLeft)
+        self.overall_average.setStyleSheet("color: rgb(253, 85, 0);")
+
+        self.layout.addWidget(self.current_quota)
+        self.layout.addWidget(self.scrap)
+        self.layout.addWidget(self.Q_average)
+        self.layout.addWidget(self.overall_average)
+
+        # Add Font Color and Background Color buttons
+        self.font_color_button = QPushButton("Font Color")
+        self.font_color_button.clicked.connect(self.change_font_color)
+        self.layout.addWidget(self.font_color_button)
+
+        self.background_color_button = QPushButton("Background Color")
+        self.background_color_button.clicked.connect(self.change_background_color)
+        self.layout.addWidget(self.background_color_button)
+
+        # Assemble layout
+        container = QWidget()
+        container.setLayout(self.layout)
+        self.setCentralWidget(container)
+
+    def set_dark_theme(self, widget):
+        # Dark mode for the widget and its children
+        widget.setStyleSheet("""
+            background-color: #111111;
+            color: rgb(253, 85, 0);
+        """)
+
+    def change_font_color(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.current_quota.setStyleSheet(f"color: {color.name()};")
+            self.scrap.setStyleSheet(f"color: {color.name()};")
+            self.Q_average.setStyleSheet(f"color: {color.name()};")
+            self.overall_average.setStyleSheet(f"color: {color.name()};")
+            self.font_color_button.setStyleSheet(f"color: {color.name()};")
+            self.background_color_button.setStyleSheet(f"color: {color.name()};")
+
+    def change_background_color(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.setStyleSheet(f"background-color: {color.name()};")
+
+class LethalData(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.stream_overlay_window = None
+
+        # Set up the main window
+        self.setWindowTitle("LethalData v1.3.0")
         self.setGeometry(100, 100, 650, 500)
         self.setFixedSize(800, 600)  # Set fixed window size (width, height)
 
@@ -379,6 +460,26 @@ class LethalData(QMainWindow):
         button_layout.addWidget(self.ClearButton)
         self.ClearButton.clicked.connect(self.clear_data)
 
+        # stream overlay button
+        self.stream_overlay_button = QPushButton("Stream Overlay")
+        self.stream_overlay_button.setFont(QFont(font_family, 13))
+        self.stream_overlay_button.setFixedWidth(150)
+        self.stream_overlay_button.setStyleSheet("""
+            QPushButton {
+                color: rgb(253, 85, 0);
+                background-color: #111111;
+                border: 1px solid rgb(253, 85, 0);
+            }
+            QPushButton:hover {
+                background-color: #2a2a2a;
+            }
+            QPushButton:pressed {
+                background-color: #333233;
+            }
+        """)
+        button_layout.addWidget(self.stream_overlay_button)
+        self.stream_overlay_button.clicked.connect(self.open_stream_overlay)
+
         # Align buttons to the left
         button_layout.addStretch()  # Push everything to the left
 
@@ -425,6 +526,7 @@ class LethalData(QMainWindow):
             self.name_inputs[1].setText("")
             self.name_inputs[2].setText("")
             self.name_inputs[3].setText("")
+            self.profit_quota_input.setText(f"{130:.0f}")
 
     def calculate_scrap(self):
         # Create the dictionary
@@ -461,6 +563,19 @@ class LethalData(QMainWindow):
             self.calc_inputs["Scrap to Sell:"].setText("")
             pass
 
+    def open_stream_overlay(self):
+        if self.stream_overlay_window is None:
+            self.stream_overlay_window = StreamOverlayWindow()
+        self.stream_overlay_window.show()
+        self.update_stream_overlay()
+
+    def update_stream_overlay(self):
+        # Update the stream overlay window with the current values
+        if self.stream_overlay_window:
+            self.stream_overlay_window.current_quota.setText(f"Quota {self.quota_number}: {self.profit_quota_input.text()}")
+            self.stream_overlay_window.scrap.setText(f"Scrap on Ship: {self.total_all_quota_scrap_label.text().split(': ')[1]}")
+            self.stream_overlay_window.Q_average.setText(f"Quota Average: {self.avg_scrap_label.text().split(': ')[1]}")
+            self.stream_overlay_window.overall_average.setText(f"Overall Average: {self.avg_label.text().split(': ')[1]}")
 
     def save_quota_data(self):
         current_data = {str(key): field.text() for key, field in self.quota_inputs.items()}
@@ -626,6 +741,7 @@ class LethalData(QMainWindow):
 
         except:
             self.roll_label.setText("Roll: 0.50")
+        self.update_stream_overlay()
 
 
 
@@ -643,6 +759,7 @@ class LethalData(QMainWindow):
                 pass
         total_ship_scrap = total_day - total_sold_scrap
         self.total_scrap_label.setText(f"Quota Profit: {total_ship_scrap:.0f}")
+        self.update_stream_overlay()
 
     def avg_quota(self):
         total_day = 0
@@ -657,6 +774,7 @@ class LethalData(QMainWindow):
                 pass
         average = (total_day / count) if count > 0 else 0
         self.avg_scrap_label.setText(f"Quota Average: {average:.0f}")
+        self.update_stream_overlay()
 
     def all_quota_average(self):
         # Combine data from inputs and checkboxes
@@ -691,6 +809,7 @@ class LethalData(QMainWindow):
         # Calculate the average, avoiding division by zero
         average = (total_day / count) if count > 0 else 0
         self.avg_label.setText(f"Overall Average: {average:.0f}")
+        self.update_stream_overlay()
 
     def sum_all_quotas(self):
         current_data = {str(key): field.text() for key, field in self.quota_inputs.items()}
@@ -714,6 +833,7 @@ class LethalData(QMainWindow):
                     pass
             total_all_scrap += (total_day - total_sold_scrap)
         self.total_all_quota_scrap_label.setText(f"Total Ship Scrap for All Quotas: {total_all_scrap:.0f}")
+        self.update_stream_overlay()
 
     def calculate_quota(self):
         if str(self.quota_number) in self.quota_data and 'Profit Quota' in self.quota_data[str(self.quota_number)]:
@@ -753,6 +873,7 @@ class LethalData(QMainWindow):
             self.sum_quota()
             self.sum_all_quotas()
             self.all_quota_average()
+            self.update_stream_overlay()
 
     def navigate_right_action(self):
         self.save_quota_data()
@@ -770,6 +891,7 @@ class LethalData(QMainWindow):
         self.sum_quota()
         self.sum_all_quotas()
         self.all_quota_average()
+        self.update_stream_overlay()
 
 
 if __name__ == "__main__":
