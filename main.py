@@ -526,6 +526,8 @@ class LethalData(QMainWindow):
             self.name_inputs[1].setText("")
             self.name_inputs[2].setText("")
             self.name_inputs[3].setText("")
+            for i in range(100):
+                self.navigate_left_action()
             self.profit_quota_input.setText(f"{130:.0f}")
 
     def calculate_scrap(self):
