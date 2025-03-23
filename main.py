@@ -1,19 +1,26 @@
 import sys
 import json
-from platform import system
+import csv
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, QLabel,
-    QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QCheckBox, QFileDialog, QMessageBox
+    QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QCheckBox, QComboBox, QFileDialog, QMessageBox, QSpinBox
 )
-from PyQt5.QtGui import QFont, QFontDatabase
+from PyQt5.QtGui import QFont, QFontDatabase, QIntValidator
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QColorDialog
-
+from matplotlib import pyplot as plt
 
 import Sheet
 import os
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QSlider
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import mplcursors
 
 
 def resource_path(relative_path):
@@ -77,10 +84,23 @@ class StreamOverlayWindow(QMainWindow):
         self.background_color_button.clicked.connect(self.change_background_color)
         self.layout.addWidget(self.background_color_button)
 
+        self.opacity_slider = QSlider(Qt.Horizontal)
+        self.opacity_slider.setRange(10, 100)  # 10% to 100% opacity
+        self.opacity_slider.setValue(100)
+        self.opacity_slider.valueChanged.connect(self.update_opacity)
+
+        self.label = QLabel("Opacity: 100%")
+        self.opacity_slider.valueChanged.connect(lambda value: self.label.setText(f"Opacity: {value}%"))
+        self.layout.addWidget(self.label)
+        self.layout.addWidget(self.opacity_slider)
+
         # Assemble layout
         container = QWidget()
         container.setLayout(self.layout)
         self.setCentralWidget(container)
+
+    def update_opacity(self, value):
+        self.setWindowOpacity(value / 100.0)
 
     def set_dark_theme(self, widget):
         # Dark mode for the widget and its children
@@ -98,6 +118,7 @@ class StreamOverlayWindow(QMainWindow):
             self.overall_average.setStyleSheet(f"color: {color.name()};")
             self.font_color_button.setStyleSheet(f"color: {color.name()};")
             self.background_color_button.setStyleSheet(f"color: {color.name()};")
+            self.label.setStyleSheet(f"color: {color.name()};")
 
     def change_background_color(self):
         color = QColorDialog.getColor()
@@ -108,9 +129,14 @@ class LethalData(QMainWindow):
     def __init__(self):
         super().__init__()
         self.stream_overlay_window = None
+        self.save_location = ""
+
+        # In __init__
+        self.auto_save_timer = QTimer(self)
+        self.auto_save_timer.timeout.connect(self.auto_save)
 
         # Set up the main window
-        self.setWindowTitle("LethalData v1.3.0")
+        self.setWindowTitle("LethalData v2.0.0")
         self.setGeometry(100, 100, 650, 500)
         self.setFixedSize(800, 600)  # Set fixed window size (width, height)
 
@@ -128,11 +154,305 @@ class LethalData(QMainWindow):
         # Add the tabs
         self.add_tabs()
 
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+
+    def on_tab_changed(self, index):
+        # Check if the graph tab is clicked
+        if self.tabs.tabText(index) == "Graph":
+            self.save_quota_data()
+            self.plot_data()
+
+    def create_graph_tab(self):
+        graph_tab = QWidget()
+        layout = QVBoxLayout()
+
+        self.selector = QComboBox()
+
+        self.selector.addItem("Profit Quota")
+        self.selector.addItem("Ship Scrap")
+        self.selector.addItem("Quota Average")
+        self.selector.addItem("Overall Average")
+        self.selector.addItem("Deaths")
+        self.selector.addItem("Sells")
+        self.label = QLabel("Select Graph")
+
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.label)
+        layout.addWidget(self.selector)
+        layout.addWidget(self.canvas)
+        # make canvas dark
+        self.figure.set_facecolor('#111111')
+        self.canvas.setStyleSheet("background-color: #111111;")
+        self.selector.currentTextChanged.connect(self.plot_data)
+        graph_tab.setLayout(layout)
+        self.plot_data()
+        return graph_tab
+
+    def toInt(self, value):
+        try:
+            return int(value)
+        except ValueError:
+            return 0
+    def plot_data(self):
+        self.figure.clear()
+        self.ax = self.figure.add_subplot(111)
+        data = self.selector.currentText()
+        self.ax.tick_params(axis='x', colors='#fd5500')
+        self.ax.tick_params(axis='y', colors='#fd5500')
+        self.ax.xaxis.label.set_color('#fd5500')
+        self.ax.yaxis.label.set_color('#fd5500')
+        self.ax.title.set_color('#fd5500')
+        self.ax.spines['bottom'].set_color('#fd5500')
+        self.ax.spines['left'].set_color('#fd5500')
+        self.ax.spines['right'].set_color('#fd5500')
+        self.ax.spines['top'].set_color('#fd5500')
+        self.ax.grid(color='#fd5500', linestyle='--', linewidth=0.5)
+        if self.theme_toggle.isChecked():
+            self.ax.set_facecolor('#111111')
+        else:
+            self.ax.set_facecolor('#ffffff')
+
+        if data == "Profit Quota":
+            quotas = list(range(1, len(self.quota_data) + 1))
+            profits = [self.toInt(self.quota_data[str(q)]['Profit Quota']) if self.quota_data[str(q)]['Profit Quota'] else 0 for q in quotas]
+            line, = self.ax.plot(quotas, profits, marker='o', linestyle='--', color='#fd5500')
+            self.ax.set_title("Quota Over Time")
+            self.ax.set_xlabel("Quota Number")
+            self.ax.set_ylabel("Profit Quota")
+
+        elif data == "Ship Scrap":
+            quotas = list(range(1, len(self.quota_data) + 1))
+            total = 0
+            scraps = []
+            for q in quotas:
+                if self.quota_data[str(q)]["Sell"] == "":
+                    self.quota_data[str(q)]["Sell"] = "0"
+
+                day1 = self.toInt(self.quota_data[str(q)]["Day 1"]) if self.quota_data[str(q)]["Day 1"] else 0
+                day2 = self.toInt(self.quota_data[str(q)]["Day 2"]) if self.quota_data[str(q)]["Day 2"] else 0
+                day3 = self.toInt(self.quota_data[str(q)]["Day 3"]) if self.quota_data[str(q)]["Day 3"] else 0
+                total -= self.toInt(self.quota_data[str(q)]["Sell"])
+                total += day1 + day2 + day3
+                scraps.append(total)
+            line, = self.ax.plot(quotas, scraps, marker='o', linestyle='--', color='#fd5500')
+            self.ax.set_title("Ship Scrap Over Time")
+            self.ax.set_xlabel("Quota Number")
+            self.ax.set_ylabel("Ship Scrap")
+
+
+        elif data == "Quota Average":
+            quotas = list(range(1, len(self.quota_data) + 1))
+            averages = [sum(self.toInt(self.quota_data[str(q)].get(day, 0)) if self.quota_data[str(q)].get(day, "") else 0 for day in ["Day 1", "Day 2", "Day 3"]) / 3 for q in quotas]
+            line, = self.ax.plot(quotas, averages, marker='o', linestyle='--', color='#fd5500')
+            self.ax.set_title("Quota Average Over Time")
+            self.ax.set_xlabel("Quota Number")
+            self.ax.set_ylabel("Quota Average")
+
+        elif data == "Overall Average":
+            quotas = list(range(1, len(self.quota_data) + 1))
+            overall_averages = [sum(self.toInt(self.quota_data[str(q)].get(day, 0)) if self.quota_data[str(q)].get(day, "") else 0 for day in ["Day 1", "Day 2", "Day 3"]) / 3 for q in quotas]
+            new_averages = []
+            for i in range(len(overall_averages)):
+                sums = 0
+                for x in range(i+1):
+                    sums += overall_averages[x]
+                sums = sums / (i + 1)
+                new_averages.append(sums)
+            line, = self.ax.plot(quotas, new_averages, marker='o', linestyle='--', color='#fd5500')
+            self.ax.set_title("Overall Average Over Time")
+            self.ax.set_xlabel("Quota Number")
+            self.ax.set_ylabel("Overall Average")
+
+        elif data == "Deaths":
+            quotas = list(range(1, len(self.quota_data) + 1))
+            deaths = [sum(1 for key in self.quota_data[str(q)] if "Player" in key and self.quota_data[str(q)][key]) - 1 for q in quotas]
+            line, = self.ax.plot(quotas, deaths, marker='o', linestyle='--', color='#fd5500')
+            self.ax.set_title("Player Deaths Over Time")
+            self.ax.set_xlabel("Quota Number")
+            self.ax.set_ylabel("Deaths")
+
+        elif data == "Sells":
+            quotas = list(range(1, len(self.quota_data) + 1))
+            sells = [self.toInt(self.quota_data[str(q)]["Sell"]) if self.quota_data[str(q)]["Sell"] else 0 for q in quotas]
+            line, = self.ax.plot(quotas, sells, marker='o', linestyle='--', color='#fd5500')
+            self.ax.set_title("Sells Over Time")
+            self.ax.set_xlabel("Quota Number")
+            self.ax.set_ylabel("Sell Amount")
+
+        mplcursors.cursor(line, hover=True)
+
+        self.canvas.draw()
+
+    def create_settings_tab(self):
+        settings_tab = QWidget()
+        layout = QVBoxLayout()
+
+        # Theme Toggle
+        theme_label = QLabel("Theme:")
+        self.theme_toggle = QCheckBox("Dark Mode (uncheck for Light)")
+        self.theme_toggle.setChecked(True)
+        self.theme_toggle.stateChanged.connect(self.toggle_theme)
+        layout.addWidget(theme_label)
+        layout.addWidget(self.theme_toggle)
+
+        # In create_quotas_tab
+        save_label = QLabel("Auto-Save:")
+
+
+        self.auto_save_checkbox = QCheckBox()
+        self.auto_save_checkbox.stateChanged.connect(self.toggle_auto_save)
+        layout.addWidget(self.auto_save_checkbox)
+
+        self.save_interval_spinner = QSpinBox()
+        self.save_interval_spinner.setRange(1, 60)  # 1 to 60 minutes
+        self.save_interval_spinner.setValue(5)  # Default to 5 minutes
+        self.save_interval_spinner.setFixedWidth(90)
+        self.save_interval_spinner.setSuffix(" minutes")
+        self.save_interval_spinner.valueChanged.connect(self.Update_Autosave)
+        self.auto_save_checkbox.setText("Auto-Save Every " + str(self.save_interval_spinner.value()) + " Minutes")
+
+        layout.addWidget(self.save_interval_spinner)
+
+        layout.addStretch()
+        settings_tab.setLayout(layout)
+        return settings_tab
+
+    def Update_Autosave(self):
+        if self.auto_save_checkbox.isChecked():
+            self.auto_save_timer.start(self.save_interval_spinner.value() * 60000)
+        self.auto_save_checkbox.setText("Auto-Save Every " + str(self.save_interval_spinner.value()) + " Minutes")
+
+    def toggle_theme(self, state):
+        if state == Qt.Checked:
+            self.set_dark_theme(self)
+            self.set_dark_theme(self.quotas_tab)
+            self.set_dark_theme(self.calc_tab)
+            self.set_dark_theme(self.settings_tab)
+            for field in self.quota_inputs.values():
+                self.set_text_box_theme(field,"dark")
+            for field in self.calc_inputs.values():
+                self.set_text_box_theme(field,"dark")
+            for field in self.name_inputs:
+                self.set_text_box_theme(field,"dark")
+            self.set_text_box_theme(self.save_button,"dark")
+            self.set_text_box_theme(self.load_button,"dark")
+            self.set_text_box_theme(self.ClearButton, "dark")
+            self.set_text_box_theme(self.navigate_left, "dark")
+            self.set_text_box_theme(self.navigate_right, "dark")
+            self.set_text_box_theme(self.stream_overlay_button, "dark")
+            self.set_text_box_theme(self.profit_quota_input,"dark")
+            self.figure.set_facecolor('#111111')
+            self.canvas.setStyleSheet("background-color: #111111;")
+            self.ax.set_facecolor('#111111')
+            self.plot_data()
+        else:
+            self.set_light_theme(self)
+            self.set_light_theme(self.quotas_tab)
+            self.set_light_theme(self.calc_tab)
+            self.set_light_theme(self.settings_tab)
+            for field in self.quota_inputs.values():
+                self.set_text_box_theme(field,"light")
+            for field in self.calc_inputs.values():
+                self.set_text_box_theme(field,"light")
+            for field in self.name_inputs:
+                self.set_text_box_theme(field,"light")
+            self.set_text_box_theme(self.save_button,"light")
+            self.set_text_box_theme(self.load_button,"light")
+            self.set_text_box_theme(self.ClearButton, "light")
+            self.set_text_box_theme(self.navigate_left, "light")
+            self.set_text_box_theme(self.navigate_right, "light")
+            self.set_text_box_theme(self.stream_overlay_button, "light")
+            self.set_text_box_theme(self.profit_quota_input,"light")
+            self.figure.set_facecolor('#ffffff')
+            self.canvas.setStyleSheet("background-color: #ffffff;")
+            self.ax.set_facecolor('#ffffff')
+            self.plot_data()
+
+    def set_dark_theme(self, widget):
+        # Dark mode for the widget and its children
+        widget.setStyleSheet("""
+            background-color: #111111;
+            color: rgb(253, 85, 0);
+        """)
+
+        # Apply dark theme for QTabWidget (the tab container)
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                background-color: #000000;
+                border: none;
+            }
+
+            QTabBar::tab {
+                background-color: #000000;
+                color: rgb(253, 85, 0);
+                padding: 5px;
+            }
+
+            QTabBar::tab:selected {
+                background-color: #2a2a2a;
+            }
+
+            QTabBar::tab:hover {
+                background-color: #2a2a2a;
+            }
+        """)
+
+    def set_light_theme(self, widget):
+        # Light mode for the widget and its children
+        widget.setStyleSheet("""
+            background-color: #fdfdfd;
+            color: #000000;
+        """)
+        # Apply light theme for QTabWidget (the tab container)
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                background-color: #fefefe;
+                border: none;
+            }
+
+            QTabBar::tab {
+                background-color: #fdfdfd;
+                color: #000000;
+                padding: 5px;
+            }
+
+            QTabBar::tab:selected {
+                background-color: #f0f0f0;
+            }
+
+            QTabBar::tab:hover {
+                background-color: #f0f0f0;
+            }
+        """)
+
+    def set_text_box_theme(self, widget,theme):
+        if theme == "dark":
+            widget.setStyleSheet("color: rgb(253, 85, 0); background-color: #000000; border: 1px solid rgb(253, 85, 0);")
+        else:
+            widget.setStyleSheet("""
+                        QPushButton {
+                            color: rgb(253, 85, 0);
+                            background-color: #eeeeee;
+                            border: 1px solid rgb(220, 200, 200);
+                        }
+                        QPushButton:hover {
+                            background-color: #dddddd;
+                        }
+                        QPushButton:pressed {
+                            background-color: #ededed;
+                        }
+                    """)
+
     def add_tabs(self):
         self.quotas_tab = self.create_quotas_tab()
         self.calc_tab = self.create_calc_tab()
+        self.settings_tab = self.create_settings_tab()
+        self.graph_tab = self.create_graph_tab()
         self.tabs.addTab(self.quotas_tab, "Quotas")
         self.tabs.addTab(self.calc_tab, "Calculator")
+        self.tabs.addTab(self.settings_tab, "Settings")
+        self.tabs.addTab(self.graph_tab, "Graph")
 
     def create_calc_tab(self):
         # Load the OTF font
@@ -464,6 +784,7 @@ class LethalData(QMainWindow):
         self.stream_overlay_button = QPushButton("Stream Overlay")
         self.stream_overlay_button.setFont(QFont(font_family, 13))
         self.stream_overlay_button.setFixedWidth(150)
+        self.stream_overlay_button.setFixedHeight(22)
         self.stream_overlay_button.setStyleSheet("""
             QPushButton {
                 color: rgb(253, 85, 0);
@@ -485,6 +806,21 @@ class LethalData(QMainWindow):
 
         # Add the button layout to the main layout
         self.layout.addLayout(button_layout)
+
+        self.profit_quota_input.setToolTip("Enter the profit quota")
+        self.navigate_left.setToolTip("Go to the previous quota")
+        self.navigate_right.setToolTip("Go to the next quota")
+        self.save_button.setToolTip("Save current data to a file")
+        self.load_button.setToolTip("Load data from a file")
+        self.ClearButton.setToolTip("Clear all data")
+
+        self.statusBar = self.statusBar()  # Enable status bar
+        self.statusBar.showMessage("Intialized", 5000)  # Show "Ready" for 5 seconds
+
+        QShortcut(QKeySequence("Ctrl+S"), self, self.save_file)
+        QShortcut(QKeySequence("Left"), self, self.navigate_left_action)
+        QShortcut(QKeySequence("Right"), self, self.navigate_right_action)
+
 
         # Assemble layout
         self.layout.addWidget(self.title_label)
@@ -558,12 +894,8 @@ class LethalData(QMainWindow):
                         self.calc_inputs["Scrap to Sell:"].setText(f"{int(quota):.0f}")
             else:
                 self.calc_inputs["Scrap to Sell:"].setText("")
-        except:
-            self.calc_inputs["Initial Terminal:"].setText("")
-            self.calc_inputs["Quota:"].setText("")
-            self.calc_inputs["Desired Terminal:"].setText("")
-            self.calc_inputs["Scrap to Sell:"].setText("")
-            pass
+        except ValueError:
+            self.statusBar.showMessage("Invalid Input", 5000)
 
     def open_stream_overlay(self):
         if self.stream_overlay_window is None:
@@ -587,21 +919,42 @@ class LethalData(QMainWindow):
         current_data['Player Names'] = [name_input.text() for name_input in self.name_inputs]
         self.quota_data[str(self.quota_number)] = current_data
 
+    def toggle_auto_save(self, state):
+        if state == Qt.Checked:
+            self.auto_save_timer.start(self.save_interval_spinner.value() * 60000)
+        else:
+            self.auto_save_timer.stop()
+
+    def auto_save(self):
+        self.save_quota_data()
+        self.autosave_file()
+        self.statusBar.showMessage("Auto-saved data", 5000)
+
+    def prompt_save_location(self):
+        options = QFileDialog.Options()
+        self.save_location, _ = QFileDialog.getSaveFileName(self, "Save File As", "", "LDS Files (*.lds);;All Files (*)", options=options)
+        return self.save_location
+
     def save_file(self):
         self.save_quota_data()
 
-        # Open a save file dialog
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save File As",  # Dialog title
-            "",  # Default directory
-            "LDS Files (*.lds);;All Files (*)",  # File type filters
-            options=options
-        )
-        if file_path:
-            with open(file_path, 'w') as file:
+        self.save_location = self.prompt_save_location()
+
+        if self.save_location:
+            with open(self.save_location, 'w') as file:
                 json.dump(self.quota_data, file, indent=4)
+                self.statusBar.showMessage(f"Saved to {self.save_location}", 5000)
+
+    def autosave_file(self):
+        self.save_quota_data()
+
+        if self.save_location == "":
+            self.save_location = self.prompt_save_location()
+
+        if self.save_location:
+            with open(self.save_location, 'w') as file:
+                json.dump(self.quota_data, file, indent=4)
+                self.statusBar.showMessage(f"Autosaved to {self.save_location}", 5000)
 
     def load_quota_data(self):
         try:
