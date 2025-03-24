@@ -2,7 +2,7 @@
 
 First and foremost I want to give plenty of credit and many thanks to [Artemis64](https://github.com/Artemis6425) for developing LethalTracker, which I shamelessly used as a source of heavy inspiration for LethalData's UI.
 
-![screenshot of LethalData](https://i.imgur.com/ELv5Puf.png)
+![screenshot of LethalData](https://i.imgur.com/W1GVyfi.png)
 ![screenshot of LethalData](https://i.imgur.com/LzMHB6O.png)
 
 The main goal of this program is to take everything about [Lethal Tracker](https://github.com/Artemis6425/LethalTracker) that was fantastic and make it better, while adding features where they were lacking.
