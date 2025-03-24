@@ -137,7 +137,7 @@ class LethalData(QMainWindow):
         self.auto_save_timer.timeout.connect(self.auto_save)
 
         # Set up the main window
-        self.setWindowTitle("LethalData v2.0.0")
+        self.setWindowTitle("LethalData v2.0.1")
         self.setGeometry(100, 100, 650, 500)
         self.setFixedSize(800, 600)  # Set fixed window size (width, height)
 
