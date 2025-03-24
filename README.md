@@ -20,6 +20,7 @@ That said, LethalData isn't a complete clone of [Lethal Tracker](https://github.
 - Per-Quota average and profit
 - Overall average and ship loot
 - Stream overlay with adjustable colors
+- Auto-generated and overlayable graphs of quota data
 - Plenty of other feature and UI improvements in the works
 
 
