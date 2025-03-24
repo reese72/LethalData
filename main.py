@@ -20,6 +20,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QSlider
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 import mplcursors
 
 
@@ -165,26 +166,20 @@ class LethalData(QMainWindow):
     def create_graph_tab(self):
         graph_tab = QWidget()
         layout = QVBoxLayout()
-
-        self.selector = QComboBox()
-
-        self.selector.addItem("Profit Quota")
-        self.selector.addItem("Ship Scrap")
-        self.selector.addItem("Quota Average")
-        self.selector.addItem("Overall Average")
-        self.selector.addItem("Deaths")
-        self.selector.addItem("Sells")
-        self.label = QLabel("Select Graph")
-
+        self.selector = QListWidget()
+        self.selector.setSelectionMode(QListWidget.MultiSelection)
+        items = ["Profit Quota", "Ship Scrap", "Quota Average", "Overall Average", "Deaths", "Sells"]
+        for item in items:
+            QListWidgetItem(item, self.selector)
+        self.selector.itemSelectionChanged.connect(self.plot_data)
+        self.label = QLabel("Select Graphs")
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.label)
         layout.addWidget(self.selector)
         layout.addWidget(self.canvas)
-        # make canvas dark
         self.figure.set_facecolor('#111111')
         self.canvas.setStyleSheet("background-color: #111111;")
-        self.selector.currentTextChanged.connect(self.plot_data)
         graph_tab.setLayout(layout)
         self.plot_data()
         return graph_tab
@@ -194,10 +189,11 @@ class LethalData(QMainWindow):
             return int(value)
         except ValueError:
             return 0
+
     def plot_data(self):
         self.figure.clear()
         self.ax = self.figure.add_subplot(111)
-        data = self.selector.currentText()
+        itms = [item.text() for item in self.selector.selectedItems()]
         self.ax.tick_params(axis='x', colors='#fd5500')
         self.ax.tick_params(axis='y', colors='#fd5500')
         self.ax.xaxis.label.set_color('#fd5500')
@@ -212,75 +208,61 @@ class LethalData(QMainWindow):
             self.ax.set_facecolor('#111111')
         else:
             self.ax.set_facecolor('#ffffff')
-
-        if data == "Profit Quota":
-            quotas = list(range(1, len(self.quota_data) + 1))
-            profits = [self.toInt(self.quota_data[str(q)]['Profit Quota']) if self.quota_data[str(q)]['Profit Quota'] else 0 for q in quotas]
-            line, = self.ax.plot(quotas, profits, marker='o', linestyle='--', color='#fd5500')
-            self.ax.set_title("Quota Over Time")
-            self.ax.set_xlabel("Quota Number")
-            self.ax.set_ylabel("Profit Quota")
-
-        elif data == "Ship Scrap":
-            quotas = list(range(1, len(self.quota_data) + 1))
-            total = 0
-            scraps = []
-            for q in quotas:
-                if self.quota_data[str(q)]["Sell"] == "":
-                    self.quota_data[str(q)]["Sell"] = "0"
-
-                day1 = self.toInt(self.quota_data[str(q)]["Day 1"]) if self.quota_data[str(q)]["Day 1"] else 0
-                day2 = self.toInt(self.quota_data[str(q)]["Day 2"]) if self.quota_data[str(q)]["Day 2"] else 0
-                day3 = self.toInt(self.quota_data[str(q)]["Day 3"]) if self.quota_data[str(q)]["Day 3"] else 0
-                total -= self.toInt(self.quota_data[str(q)]["Sell"])
-                total += day1 + day2 + day3
-                scraps.append(total)
-            line, = self.ax.plot(quotas, scraps, marker='o', linestyle='--', color='#fd5500')
-            self.ax.set_title("Ship Scrap Over Time")
-            self.ax.set_xlabel("Quota Number")
-            self.ax.set_ylabel("Ship Scrap")
+        self.ax.set_title("Data Over Time")
+        self.ax.set_xlabel("Quota Number")
 
 
-        elif data == "Quota Average":
-            quotas = list(range(1, len(self.quota_data) + 1))
-            averages = [sum(self.toInt(self.quota_data[str(q)].get(day, 0)) if self.quota_data[str(q)].get(day, "") else 0 for day in ["Day 1", "Day 2", "Day 3"]) / 3 for q in quotas]
-            line, = self.ax.plot(quotas, averages, marker='o', linestyle='--', color='#fd5500')
-            self.ax.set_title("Quota Average Over Time")
-            self.ax.set_xlabel("Quota Number")
-            self.ax.set_ylabel("Quota Average")
+        for data in itms:
+            if data == "Profit Quota":
+                quotas = list(range(1, len(self.quota_data) + 1))
+                profits = [self.toInt(self.quota_data[str(q)]['Profit Quota']) if self.quota_data[str(q)]['Profit Quota'] else 0 for q in quotas]
+                line, = self.ax.plot(quotas, profits, marker='o', linestyle='--', color='#fd5500')
 
-        elif data == "Overall Average":
-            quotas = list(range(1, len(self.quota_data) + 1))
-            overall_averages = [sum(self.toInt(self.quota_data[str(q)].get(day, 0)) if self.quota_data[str(q)].get(day, "") else 0 for day in ["Day 1", "Day 2", "Day 3"]) / 3 for q in quotas]
-            new_averages = []
-            for i in range(len(overall_averages)):
-                sums = 0
-                for x in range(i+1):
-                    sums += overall_averages[x]
-                sums = sums / (i + 1)
-                new_averages.append(sums)
-            line, = self.ax.plot(quotas, new_averages, marker='o', linestyle='--', color='#fd5500')
-            self.ax.set_title("Overall Average Over Time")
-            self.ax.set_xlabel("Quota Number")
-            self.ax.set_ylabel("Overall Average")
+            elif data == "Ship Scrap":
+                quotas = list(range(1, len(self.quota_data) + 1))
+                total = 0
+                scraps = []
+                for q in quotas:
+                    if self.quota_data[str(q)]["Sell"] == "":
+                        self.quota_data[str(q)]["Sell"] = "0"
 
-        elif data == "Deaths":
-            quotas = list(range(1, len(self.quota_data) + 1))
-            deaths = [sum(1 for key in self.quota_data[str(q)] if "Player" in key and self.quota_data[str(q)][key]) - 1 for q in quotas]
-            line, = self.ax.plot(quotas, deaths, marker='o', linestyle='--', color='#fd5500')
-            self.ax.set_title("Player Deaths Over Time")
-            self.ax.set_xlabel("Quota Number")
-            self.ax.set_ylabel("Deaths")
+                    day1 = self.toInt(self.quota_data[str(q)]["Day 1"]) if self.quota_data[str(q)]["Day 1"] else 0
+                    day2 = self.toInt(self.quota_data[str(q)]["Day 2"]) if self.quota_data[str(q)]["Day 2"] else 0
+                    day3 = self.toInt(self.quota_data[str(q)]["Day 3"]) if self.quota_data[str(q)]["Day 3"] else 0
+                    total -= self.toInt(self.quota_data[str(q)]["Sell"])
+                    total += day1 + day2 + day3
+                    scraps.append(total)
+                line, = self.ax.plot(quotas, scraps, marker='o', linestyle='--', color='#fd5500')
 
-        elif data == "Sells":
-            quotas = list(range(1, len(self.quota_data) + 1))
-            sells = [self.toInt(self.quota_data[str(q)]["Sell"]) if self.quota_data[str(q)]["Sell"] else 0 for q in quotas]
-            line, = self.ax.plot(quotas, sells, marker='o', linestyle='--', color='#fd5500')
-            self.ax.set_title("Sells Over Time")
-            self.ax.set_xlabel("Quota Number")
-            self.ax.set_ylabel("Sell Amount")
+            elif data == "Quota Average":
+                quotas = list(range(1, len(self.quota_data) + 1))
+                averages = [sum(self.toInt(self.quota_data[str(q)].get(day, 0)) if self.quota_data[str(q)].get(day, "") else 0 for day in ["Day 1", "Day 2", "Day 3"]) / 3 for q in quotas]
+                line, = self.ax.plot(quotas, averages, marker='o', linestyle='--', color='#fd5500')
 
-        mplcursors.cursor(line, hover=True)
+            elif data == "Overall Average":
+                quotas = list(range(1, len(self.quota_data) + 1))
+                overall_averages = [sum(self.toInt(self.quota_data[str(q)].get(day, 0)) if self.quota_data[str(q)].get(day, "") else 0 for day in ["Day 1", "Day 2", "Day 3"]) / 3 for q in quotas]
+                new_averages = []
+                for i in range(len(overall_averages)):
+                    sums = 0
+                    for x in range(i+1):
+                        sums += overall_averages[x]
+                    sums = sums / (i + 1)
+                    new_averages.append(sums)
+                line, = self.ax.plot(quotas, new_averages, marker='o', linestyle='--', color='#fd5500')
+
+            elif data == "Deaths":
+                quotas = list(range(1, len(self.quota_data) + 1))
+                deaths = [sum(1 for key in self.quota_data[str(q)] if "Player" in key and self.quota_data[str(q)][key]) - 1 for q in quotas]
+                line, = self.ax.plot(quotas, deaths, marker='o', linestyle='--', color='#fd5500')
+
+            elif data == "Sells":
+                quotas = list(range(1, len(self.quota_data) + 1))
+                sells = [self.toInt(self.quota_data[str(q)]["Sell"]) if self.quota_data[str(q)]["Sell"] else 0 for q in quotas]
+                line, = self.ax.plot(quotas, sells, marker='o', linestyle='--', color='#fd5500')
+
+            if data != '':
+                mplcursors.cursor(line, hover=True)
 
         self.canvas.draw()
 
